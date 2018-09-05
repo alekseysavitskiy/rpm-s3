@@ -13,11 +13,9 @@ import collections
 import yum
 import boto
 import subprocess
+import pexpect
 
 lib_root = os.path.dirname(os.path.dirname(__file__))
-
-sys.path.insert(1, os.path.join(lib_root, "vendor/pexpect"))
-import pexpect
 
 sys.path.insert(1, os.path.join(lib_root, "vendor/createrepo"))
 import createrepo
@@ -108,21 +106,39 @@ class FileGrabber(object):
 
 def getclient(base, host_url):
     if os.getenv('AWS_ACCESS_KEY'):
-        return boto.connect_s3(
+        client = boto.connect_s3(
             os.getenv('AWS_ACCESS_KEY'),
             os.getenv('AWS_SECRET_KEY'),
             host=host_url
-        ).get_bucket(base.netloc)
+        )
     else:
-        return boto.connect_s3(
+        client = boto.connect_s3(
             host=host_url
-        ).get_bucket(base.netloc)
+        )
+    b = client.get_bucket(options.bucket)
+    loc = b.get_location()  
+    if loc: # not US standard
+        client = boto.s3.connect_to_region(loc)
+    return client.get_bucket(options.bucket)
 
+def get_rpm_gpg_opts():
+    optlist = []
+    if options.gpg_cmd:
+        optlist.append('--define "%__gpg {}"'.format(options.gpg_cmd))
+    if options.signing_key:
+        optlist.append('--define "%_gpg_name {}"'.format(options.signing_key))
+    return optlist
+
+def get_gpg_opts():
+    if options.signing_key:
+        return ["--local-user", options.signing_key]
+            
 
 def sign(rpmfile):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
     # TODO: check if file is indeed signed
-    cmd = "rpm --resign '%s'" % rpmfile
+    cmd = ["rpm", "--resign", rpmfile] + get_rpm_gpg_opts()
+    cmd = " ".join(cmd)
     logging.info(cmd)
     try:
         child = pexpect.spawn(cmd)
@@ -136,7 +152,12 @@ def sign(rpmfile):
 
 def sign_metadata(repomdfile):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
-    cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
+    if options.gpg_cmd:
+        cmd = options.gpg_cmd
+    else:
+        cmd = 'gpg'
+
+    cmd = [cmd, "--detach-sign", "--armor", repomdfile] + get_gpg_opts()
     logging.info(cmd)
     try:
         subprocess.check_call(cmd)
@@ -254,13 +275,18 @@ if __name__ == '__main__':
     parser.add_option('-v', '--verbose', action='count', default=0)
     parser.add_option('--visibility', default='private')
     parser.add_option('-s', '--sign', action='count', default=0)
+    parser.add_option('--gpg_cmd', default=None)
+    parser.add_option('--signing-key', default=None)
     parser.add_option('-l', '--logfile')
     parser.add_option('-d', '--delete', action='store_true', default=False)
     parser.add_option('-r', '--region')
-    parser.add_option('-c', '--host', default='s3-eu-central-1.amazonaws.com')
+    parser.add_option('-c', '--host', default='s3.amazonaws.com')
     options, args = parser.parse_args()
-    if options.region is not None and options.host != 's3-eu-central-1.amazonaws.com':
+    
+    if options.region is not None and options.host != 's3.amazonaws.com':
         parser.error('region and host are mutually exclusive')
     elif options.region is not None:
         options.host = "s3.amazonaws.com" if options.region == "us-east-1" else "s3-{}.amazonaws.com".format(options.region)
+    
+    
     main(options, args)
