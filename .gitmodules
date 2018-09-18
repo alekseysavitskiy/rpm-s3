@@ -1,3 +1,0 @@
-[submodule "vendor/pexpect"]
-	path = vendor/pexpect
-	url = https://github.com/pexpect/pexpect.git
