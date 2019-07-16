@@ -10,11 +10,10 @@ If you're looking for the same kind of tool, but for APT repositories, I can rec
 
 1. You have python installed (2.6+).
 
-1. You have your S3 credentials available in the `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environment variables:
+1. You have your S3 credentials available in the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables:
 
-        export AWS_ACCESS_KEY="key"
-        export AWS_SECRET_KEY="secret"
-
+        export AWS_ACCESS_KEY_ID="key"
+        export AWS_SECRET_ACCESS_KEY="secret"
 ## Installation
 
     git clone https://github.com/crohr/rpm-s3 --recurse-submodules

@@ -105,10 +105,10 @@ class FileGrabber(object):
 
 
 def getclient(base, host_url):
-    if os.getenv('AWS_ACCESS_KEY'):
+    if os.getenv('AWS_ACCESS_KEY_ID'):
         client = boto.connect_s3(
-            os.getenv('AWS_ACCESS_KEY'),
-            os.getenv('AWS_SECRET_KEY'),
+            os.getenv('AWS_ACCESS_KEY_ID'),
+            os.getenv('AWS_SECRET_ACCESS_KEY'),
             host=host_url
         )
     else:
