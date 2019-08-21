@@ -20,8 +20,8 @@ ADD . /rpm-s3
 WORKDIR /rpm-s3
 RUN pip install -r requirements.txt
 
-RUN "mkdir -p ${BUCKET}"
-RUN "aws s3 sync s3://${BUCKET}/${REPOPATH}/ ./${BUCKET}/"
-RUN "rm -rf ./${BUCKET}/repodata"
-RUN "aws s3 sync --delete s3://${BUCKET}/${REPOPATH}/ ./${BUCKET}/"
-RUN "/rpm-s3/bin/rpm-s3 -b ${BUCKET} -r ${AWS_DEFAULT_REGION} --repopath ${REPOPATH} --visibility public-read --verbose ${BUCKET}/*.rpm"
+RUN mkdir -p ${BUCKET}
+RUN aws s3 sync s3://${BUCKET}/${REPOPATH}/ ./${BUCKET}/
+RUN rm -rf ./${BUCKET}/repodata
+RUN aws s3 sync --delete s3://${BUCKET}/${REPOPATH}/ ./${BUCKET}/
+RUN /rpm-s3/bin/rpm-s3 -b ${BUCKET} -r ${AWS_DEFAULT_REGION} --repopath ${REPOPATH} --visibility public-read --verbose ${BUCKET}/*.rpm
